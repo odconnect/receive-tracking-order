@@ -48,7 +48,7 @@ type LoadingStatus = 'loading' | 'ready' | 'error';
 type AppMode = 'entry' | 'history';
 
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGzAQbEvGRibb7lu2VvlbVi19Z9_gFXvHYkpwlMFJ1h6cb4STWF6hJqibFCrj8uorp/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNvAsELdot05k3EY4Mk4jBOdM79vHmXcDjsi4AdBgztQDqC-hdw0e8prDEduCv5oDX/exec";
 
 const SHEET_URLS = {
     brand: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=577319442",
@@ -190,12 +190,66 @@ const PopTracking: React.FC = () => {
         return parsedData;
     };
 
-    const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-    });
+
+// --- 🔧 ฟังก์ชันย่อรูปภาพ (แก้ไขแล้ว) ---
+    const compressImage = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            // 1. ถ้าเป็นวิดีโอ ไม่ต้องย่อ ให้ส่งค่าเดิมกลับไปเลย
+            if (file.type.includes('video')) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = error => reject(error);
+                return;
+            }
+
+            // 2. ถ้าเป็นรูปภาพ ให้ทำการย่อ
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                if (event.target?.result) {
+                    img.src = event.target.result as string;
+                }
+                
+                img.onload = () => {
+                    // ⚠️ บรรทัดนี้สำคัญมาก ต้องประกาศตัวแปร canvas ตรงนี้
+                    const canvas: HTMLCanvasElement = document.createElement('canvas');
+                    
+                    const maxWidth = 1000; // กำหนดความกว้างสูงสุด
+                    const scaleSize = maxWidth / img.width;
+                    const newWidth = (img.width > maxWidth) ? maxWidth : img.width;
+                    const newHeight = (img.width > maxWidth) ? (img.height * scaleSize) : img.height;
+
+                    canvas.width = newWidth;
+                    canvas.height = newHeight;
+
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                        
+                        // แปลงเป็น JPEG คุณภาพ 0.7 (70%)
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        resolve(compressedDataUrl);
+                    } else {
+                        reject(new Error("Cannot get canvas context"));
+                    }
+                };
+                
+                img.onerror = (error) => reject(error);
+            };
+            
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+
+    // const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    //     const reader = new FileReader();
+    //     reader.readAsDataURL(file);
+    //     reader.onload = () => resolve(reader.result as string);
+    //     reader.onerror = error => reject(error);
+    // });
 
    
     const filteredData = useMemo<InventoryItem[]>(() => {
@@ -230,15 +284,51 @@ const PopTracking: React.FC = () => {
         });
     };
 
-    const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+ const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files) return;
+        
         const fileList = Array.from(files);
-        if (selectedFiles.length + fileList.length > 3) return alert('แนบไฟล์ได้ไม่เกิน 3 ไฟล์');
-        setSelectedFiles(prev => [...prev, ...fileList]);
-        event.target.value = '';
-    };
+        const MAX_FILE_SIZE_MB = 20;
+        const MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; 
 
+        const validSizeFiles = fileList.filter(file => {
+            if (file.size > MAX_BYTES) {
+                alert(`⚠️ ไฟล์ "${file.name}" มีขนาดใหญ่เกิน ${MAX_FILE_SIZE_MB}MB \n(ระบบจะไม่ทำการอัปโหลดไฟล์นี้)`);
+                return false;
+            }
+            return true;
+        });
+
+      
+        if (validSizeFiles.length === 0) {
+            event.target.value = '';
+            return;
+        }
+
+
+        const uniqueNewFiles = validSizeFiles.filter(newFile => 
+            !selectedFiles.some(existingFile => 
+                existingFile.name === newFile.name && existingFile.size === newFile.size
+            )
+        );
+
+        if (uniqueNewFiles.length === 0 && validSizeFiles.length > 0) {
+             alert('คุณเลือกไฟล์เหล่านี้ไปแล้ว');
+             event.target.value = ''; 
+             return;
+        }
+
+     
+        if (selectedFiles.length + uniqueNewFiles.length > 10) {
+             alert('แนบไฟล์ได้ไม่เกิน 10 ไฟล์');
+             event.target.value = '';
+             return;
+        }
+
+        setSelectedFiles(prev => [...prev, ...uniqueNewFiles]);
+        event.target.value = ''; 
+    };
     const removeFile = (index: number) => {
         setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     };
@@ -279,7 +369,7 @@ const PopTracking: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            const mediaBase64 = await Promise.all(selectedFiles.map(file => toBase64(file)));
+          const mediaBase64 = await Promise.all(selectedFiles.map(file => compressImage(file)));
             
             let finalNote = reportNote;
             if (!isMissing && !isDefectMode) finalNote = "Received All POP Items Successfully.";
@@ -549,7 +639,7 @@ const PopTracking: React.FC = () => {
                                 <div className="upload-box">
                                     <input type="file" className="upload-input" accept="image/*,video/*" multiple onChange={handleFileSelect} />
                                     <div style={{ fontSize: 24, marginBottom: 5, color: '#fb923c' }}>📷 🎥</div>
-                                    <div style={{ color: '#f97316', fontSize: '0.85rem', fontWeight: 600, pointerEvents: 'none' }}>กดเพื่อถ่ายรูป/วิดีโอ หรือเลือกไฟล์<br /><span style={{ color: 'red', fontSize: '0.7rem' }}>(รวมไม่เกิน 3 ไฟล์)</span></div>
+                                    <div style={{ color: '#f97316', fontSize: '0.85rem', fontWeight: 600, pointerEvents: 'none' }}>กดเพื่อถ่ายรูป/วิดีโอ หรือเลือกไฟล์<br /><span style={{ color: 'red', fontSize: '0.7rem' }}>(รวมไม่เกิน 10 ไฟล์)</span></div>
                                 </div>
                                 <div className="preview-grid">
                                     {selectedFiles.map((file, index) => {
