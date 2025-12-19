@@ -15,40 +15,37 @@
   --success-soft: #dcfce7;
   --success-border: #86efac;
 
-  /* สำคัญ: บังคับให้ Browser ใช้โหมดสว่างเสมอ ป้องกันสีเพี้ยนใน Dark Mode */
+  /* บังคับ Light Mode */
   color-scheme: light;
 }
 
 * {
-  box-sizing: border-box; /* จัดการ Padding ไม่ให้เบียดขนาดกล่อง */
+  box-sizing: border-box; 
 }
 
 body {
   margin: 0;
   font-family: 'Inter', 'Sarabun', sans-serif;
   background-color: var(--bg-body);
-  -webkit-font-smoothing: antialiased; /* ทำให้ตัวหนังสือคมชัดบน Mac/iOS */
+  -webkit-font-smoothing: antialiased; 
 }
 
 .pop-container {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  /* ปรับ Padding ให้เหมาะสมกับ Desktop */
   padding: 50px 15px 50px; 
   color: var(--text-main);
   background-color: var(--bg-body);
   min-height: 100vh;
 }
 
-/* Responsive: ปรับแต่งสำหรับมือถือ */
 @media (max-width: 600px) {
   .pop-container {
-    padding-top: 20px; /* ลดช่องว่างด้านบนในมือถือ */
+    padding-top: 20px;
   }
-  
   header h1 {
-    font-size: 1.25rem; /* ลดขนาดหัวข้อไม่ให้ใหญ่เกิน */
+    font-size: 1.25rem; 
   }
 }
 
@@ -119,7 +116,7 @@ header h1 {
 
 @media (max-width: 768px) {
   .controls-card {
-    grid-template-columns: 1fr; /* เรียงเป็นแนวตั้งในมือถือ */
+    grid-template-columns: 1fr; 
     gap: 15px;
   }
 }
@@ -137,23 +134,33 @@ header h1 {
   margin-left: 4px;
 }
 
-/* Input Styling */
+/* Fix Inputs */
 select,
 input[type="date"],
 textarea {
   width: 100%;
-  padding: 12px; /* เพิ่มพื้นที่กดให้ง่ายขึ้นบนจอสัมผัส */
+  padding: 12px;
   font-family: inherit;
-  
-  /* สำคัญ: ใช้ 16px หรือ 1rem เพื่อป้องกัน iOS Zoom */
   font-size: 1rem; 
-  
   border: 1px solid var(--border);
   border-radius: 10px;
-  background-color: #f8fafc; /* ใช้ background-color ชัดเจน */
-  color: #1e293b; /* บังคับสีตัวอักษรให้เข้ม */
+  background-color: #f8fafc; 
+  color: #1e293b; /* บังคับสีเข้ม */
   appearance: none;
-  -webkit-appearance: none; /* สำหรับ Safari/iOS */
+  -webkit-appearance: none; 
+  /* แก้ปัญหา text ตัด */
+  white-space: normal;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  min-height: 48px;
+}
+
+/* ปรับฟอนต์ input ในมือถือ */
+@media (max-width: 480px) {
+  select {
+    font-size: 0.9rem;
+    padding-right: 30px;
+  }
 }
 
 select:focus,
@@ -162,7 +169,7 @@ textarea:focus {
   outline: none;
   border-color: var(--primary);
   background-color: #fff;
-  box-shadow: 0 0 0 3px var(--primary-soft); /* เพิ่ม Focus ring ให้เห็นชัด */
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 /* Progress Bar */
@@ -171,7 +178,7 @@ textarea:focus {
 }
 .progress-container {
   width: 100%;
-  height: 6px; /* หนาขึ้นเล็กน้อยให้ดูง่าย */
+  height: 6px;
   background: #e2e8f0;
   margin-top: 8px;
   border-radius: 10px;
@@ -201,7 +208,7 @@ textarea:focus {
   justify-content: space-between;
   align-items: center;
   background: #fff;
-  flex-wrap: wrap; /* ให้ตกบรรทัดได้ถ้ายาวเกิน */
+  flex-wrap: wrap; 
   gap: 10px;
 }
 .branch-title {
@@ -217,10 +224,10 @@ textarea:focus {
   font-size: 0.8rem;
 }
 
-/* Table Responsive */
+/* Table */
 .table-container {
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* เลื่อนลื่นบน iOS */
+  -webkit-overflow-scrolling: touch; 
 }
 table {
   width: 100%;
@@ -229,7 +236,7 @@ table {
 }
 th {
   text-align: left;
-  padding: 12px 15px;
+  padding: 14px 12px;
   font-size: 0.75rem;
   color: var(--text-sub);
   background: #f8fafc;
@@ -237,24 +244,25 @@ th {
   font-weight: 600;
 }
 td {
-  padding: 12px 15px;
+  padding: 14px 12px;
   border-bottom: 1px solid var(--border);
   font-size: 0.9rem;
   vertical-align: middle;
   color: var(--text-main);
+  white-space: normal; /* ให้ชื่อสินค้าขึ้นบรรทัดใหม่ได้ */
+  line-height: 1.4;
 }
+
 tr {
   cursor: pointer;
   transition: background-color 0.1s;
 }
-/* Hover effect only on devices that support hover (Desktop) */
 @media (hover: hover) {
   tr:hover td {
     background-color: #f8fafc;
   }
 }
 
-/* Checked State */
 tr.checked-row td {
   background-color: var(--success-bg);
   color: var(--text-sub);
@@ -268,11 +276,23 @@ tr.checked-row .item-name {
   color: var(--success-text);
 }
 
+/* Checkbox Alignment Fix */
+td:last-child {
+  vertical-align: middle;
+  text-align: center;
+  display: flex; /* ใช้ Flex เพื่อจัดกึ่งกลาง */
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 50px;
+  border-bottom: none;
+}
+
 .qty-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px; /* เพิ่มขนาดเล็กน้อยให้อ่านง่าย */
+  min-width: 32px; 
   height: 32px;
   border-radius: 50%;
   font-size: 0.85rem;
@@ -285,6 +305,8 @@ tr.checked-row .item-name {
   height: 24px;
   accent-color: var(--primary);
   cursor: pointer;
+  display: block;
+  margin: 0;
 }
 
 /* Report Section */
@@ -319,7 +341,7 @@ tr.checked-row .item-name {
   margin-bottom: 15px;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* จัดให้ปุ่มอยู่ขวาสุด */
+  justify-content: space-between; 
   gap: 10px;
   flex-wrap: wrap;
 }
@@ -328,7 +350,6 @@ tr.checked-row .item-name {
   gap: 15px;
 }
 
-/* Upload & Preview */
 .upload-box {
   border: 2px dashed #fdba74;
   border-radius: 10px;
@@ -358,14 +379,14 @@ tr.checked-row .item-name {
 }
 .preview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* ปรับขนาดพรีวิวให้พอดีนิ้ว */
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
   gap: 10px;
   margin-top: 15px;
 }
 .preview-item {
   position: relative;
   width: 100%;
-  padding-top: 100%; /* Square aspect ratio */
+  padding-top: 100%; 
 }
 .preview-media {
   position: absolute;
@@ -384,7 +405,7 @@ tr.checked-row .item-name {
   background: #ef4444;
   color: white;
   border-radius: 50%;
-  width: 24px; /* ใหญ่ขึ้นกดง่ายขึ้น */
+  width: 24px; 
   height: 24px;
   text-align: center;
   line-height: 22px;
@@ -399,7 +420,7 @@ tr.checked-row .item-name {
   width: 100%;
   color: white;
   border: none;
-  padding: 14px; /* ปุ่มใหญ่ขึ้น */
+  padding: 14px; 
   border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
@@ -432,11 +453,27 @@ tr.checked-row .item-name {
   border-color: #ef4444;
 }
 
+/* Empty State Fix */
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
   color: var(--text-sub);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
 }
+.empty-state span {
+  font-size: 3.5rem;
+  opacity: 0.8;
+  display: block;
+  animation: bounce 2s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 .alert-date {
   color: #ef4444;
   font-size: 0.75rem;
@@ -444,7 +481,6 @@ tr.checked-row .item-name {
   font-weight: 500;
 }
 
-/* Loading Overlay */
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -457,7 +493,7 @@ tr.checked-row .item-name {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(2px); /* เพิ่มความสวยงาม */
+  backdrop-filter: blur(2px); 
 }
 .spinner {
   width: 40px;
@@ -474,4 +510,15 @@ tr.checked-row .item-name {
 @keyframes pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+  }
+  .pop-container {
+    padding: 0;
+    max-width: none;
+  }
 }
