@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef, type ChangeEvent, use } from 'react';
+import React, { useState, useEffect, useMemo, useRef, type ChangeEvent } from 'react';
 // import { useReactToPrint } from 'react-to-print';
 import './PopTracking.css';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import html2pdf from 'html2pdf.js';
+
 // --- Type Definitions ---
 interface InventoryItem {
     id: string;
@@ -69,7 +67,6 @@ const PopTracking: React.FC = () => {
     const [selectedBranch, setSelectedBranch] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [selectedDate, setSelectedDate] = useState<string>('');
-const [endDate, setEnfDate] = useState<string>('');
   
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
     const [reportNote, setReportNote] = useState<string>('');
