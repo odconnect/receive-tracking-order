@@ -522,3 +522,90 @@ td:last-child {
     max-width: none;
   }
 }
+
+/* --- Skeleton Loading Styles --- */
+.skeleton {
+  background: #e2e8f0;
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 0%,
+    #f1f5f9 50%,
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* --- Skeleton Loading Styles --- */
+.skeleton {
+  background: #e2e8f0;
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 0%,
+    #f1f5f9 50%,
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* จัด Layout ของ Skeleton ให้เหมือนหน้าจริง */
+.skeleton-controls {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-input {
+  flex: 1;
+  height: 45px;
+}
+
+.skeleton-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-header {
+  height: 30px;
+  width: 40%;
+  margin-bottom: 20px;
+}
+
+.skeleton-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+.skeleton-col {
+  height: 24px;
+}

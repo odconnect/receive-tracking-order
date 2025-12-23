@@ -56,6 +56,40 @@ const SHEET_URLS = {
     special: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=1283637344"
 };
 
+// --- Skeleton Component ---
+const SkeletonLoader = () => {
+    return (
+        <div className="animate-pulse" style={{ marginTop: 20 }}>
+            {/* ส่วน Controls (เลียนแบบช่องเลือกสาขา) */}
+            <div className="skeleton-controls">
+                <div className="skeleton skeleton-input"></div>
+                <div className="skeleton skeleton-input"></div>
+                <div className="skeleton skeleton-input"></div>
+            </div>
+
+            {/* ส่วน Progress Bar จำลอง */}
+            <div style={{ marginBottom: 20 }}>
+                <div className="skeleton" style={{ height: 20, width: '100%', borderRadius: 10 }}></div>
+            </div>
+
+            {/* ส่วนตารางรายการ */}
+            <div className="skeleton-card">
+                <div className="skeleton skeleton-header"></div>
+                
+                {/* จำลองรายการ 6 บรรทัด */}
+                {[...Array(6)].map((_, i) => (
+                    <div key={i} className="skeleton-row">
+                        <div className="skeleton skeleton-col" style={{ width: '15%' }}></div> {/* หมวด */}
+                        <div className="skeleton skeleton-col" style={{ width: '60%' }}></div> {/* ชื่อรายการ */}
+                        <div className="skeleton skeleton-col" style={{ width: '10%' }}></div> {/* จำนวน */}
+                        <div className="skeleton skeleton-col" style={{ width: '15%' }}></div> {/* Checkbox */}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const PopTracking: React.FC = () => {
 
     const [database, setDatabase] = useState<InventoryItem[]>([]);
@@ -80,7 +114,6 @@ const PopTracking: React.FC = () => {
     
 
     const componentRef = useRef<HTMLDivElement>(null);
-
     
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
@@ -97,6 +130,8 @@ const PopTracking: React.FC = () => {
         }
         setCheckedItems(savedChecks);
 
+
+        
         const loadAllData = async () => {
             try {
                 const [brandData, systemData, specialData] = await Promise.all([
@@ -190,10 +225,10 @@ const PopTracking: React.FC = () => {
     };
 
 
-
+    // --- 🔧 Image Compression Function ---
     const compressImage = async (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
-      
+            // 1. If video, skip compression and return original.
             if (file.type.includes('video')) {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -202,7 +237,7 @@ const PopTracking: React.FC = () => {
                 return;
             }
 
-           
+            // 2. If image, compress it.
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = (event) => {
@@ -212,10 +247,10 @@ const PopTracking: React.FC = () => {
                 }
                 
                 img.onload = () => {
-                   
+                    // ⚠️ Important: Declare canvas variable here
                     const canvas: HTMLCanvasElement = document.createElement('canvas');
                     
-                    const maxWidth = 1000; 
+                    const maxWidth = 1000; // Set max width
                     const scaleSize = maxWidth / img.width;
                     const newWidth = (img.width > maxWidth) ? maxWidth : img.width;
                     const newHeight = (img.width > maxWidth) ? (img.height * scaleSize) : img.height;
@@ -227,7 +262,7 @@ const PopTracking: React.FC = () => {
                     if (ctx) {
                         ctx.drawImage(img, 0, 0, newWidth, newHeight);
                         
-                        
+                        // Convert to JPEG with 0.7 (70%) quality
                         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         resolve(compressedDataUrl);
                     } else {
@@ -243,14 +278,6 @@ const PopTracking: React.FC = () => {
     };
 
 
-    // const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    //     const reader = new FileReader();
-    //     reader.readAsDataURL(file);
-    //     reader.onload = () => resolve(reader.result as string);
-    //     reader.onerror = error => reject(error);
-    // });
-
-   
     const filteredData = useMemo<InventoryItem[]>(() => {
         if (!selectedBranch) return [];
         let data = database.filter(d => d.branch === selectedBranch);
@@ -271,8 +298,9 @@ const PopTracking: React.FC = () => {
             isComplete: checkedCount === total
         };
     }, [filteredData, checkedItems]);
-const handleToggleCheck = (id: string) => {
-        if (!selectedDate) return alert('⚠️ กรุณาระบุวันที่ได้รับ POP');
+
+    const handleToggleCheck = (id: string) => {
+        if (!selectedDate) return alert('⚠️ Please specify the POP receipt date');
         
         setCheckedItems(prev => {
             const isCurrentlyChecked = !!prev[id];
@@ -288,10 +316,11 @@ const handleToggleCheck = (id: string) => {
             return newState;
         });
     };
-   const isAllSelected = filteredData.length > 0 && filteredData.every(item => checkedItems[item.id]);
+
+    const isAllSelected = filteredData.length > 0 && filteredData.every(item => checkedItems[item.id]);
 
     const handleSelectAll = () => {
-        if (!selectedDate) return alert('⚠️ กรุณาระบุวันที่ได้รับ POP');
+        if (!selectedDate) return alert('⚠️ Please specify the POP receipt date');
 
         const newCheckedState = {...checkedItems};
         if(isAllSelected) {
@@ -306,12 +335,6 @@ const handleToggleCheck = (id: string) => {
             });
         }
         setCheckedItems(newCheckedState);
-        // setCheckedItems(prev => {
-        //     const newState = { ...prev, [id]: !prev[id] };
-        //     if (newState[id]) localStorage.setItem('pop_check_' + id, 'true');
-        //     else localStorage.removeItem('pop_check_' + id);
-        //     return newState;
-        // });
     };
 
  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
@@ -324,7 +347,7 @@ const handleToggleCheck = (id: string) => {
 
         const validSizeFiles = fileList.filter(file => {
             if (file.size > MAX_BYTES) {
-                alert(`⚠️ ไฟล์ "${file.name}" มีขนาดใหญ่เกิน ${MAX_FILE_SIZE_MB}MB \n(ระบบจะไม่ทำการอัปโหลดไฟล์นี้)`);
+                alert(`⚠️ File "${file.name}" exceeds ${MAX_FILE_SIZE_MB}MB \n(System will not upload this file)`);
                 return false;
             }
             return true;
@@ -344,14 +367,14 @@ const handleToggleCheck = (id: string) => {
         );
 
         if (uniqueNewFiles.length === 0 && validSizeFiles.length > 0) {
-             alert('คุณเลือกไฟล์เหล่านี้ไปแล้ว');
+             alert('You have already selected these files');
              event.target.value = ''; 
              return;
         }
 
      
         if (selectedFiles.length + uniqueNewFiles.length > 10) {
-             alert('แนบไฟล์ได้ไม่เกิน 10 ไฟล์');
+             alert('Cannot attach more than 10 files');
              event.target.value = '';
              return;
         }
@@ -365,8 +388,8 @@ const handleToggleCheck = (id: string) => {
 
    
     const handleSubmit = async () => {
-        if (!selectedBranch) return alert("กรุณาเลือกสาขา");
-        if (!selectedDate) return alert("กรุณาเลือกวันที่");
+        if (!selectedBranch) return alert("Please select a branch");
+        if (!selectedDate) return alert("Please select a date");
 
         const allBranchItems = database.filter(d => d.branch === selectedBranch);
         
@@ -383,25 +406,25 @@ const handleToggleCheck = (id: string) => {
       
         const missingList = itemsSnapshot
             .filter(item => !item.isChecked)
-            .map(item => `- ${item.item} (จำนวน: ${item.qty})`);
+            .map(item => `- ${item.item} (Qty: ${item.qty})`);
 
         const isMissing = missingList.length > 0;
         const missingString = isMissing ? missingList.join("\n") : "-";
 
 
-if (isAllMissing){
-    if (!reportNote){
-        return alert("⚠️ คุณยังไม่ได้เลือกรับรายการใดๆ เลย\n\nกรุณาระบุเหตุผลในช่อง 'รายละเอียดปัญหา' ก่อนกดส่ง\n");
-    }
-}
+        if (isAllMissing){
+            if (!reportNote){
+                return alert("⚠️ You haven't selected any received items.\n\nPlease specify the reason in the 'Issue Details' box before submitting.\n");
+            }
+        }
 
-     else if (isMissing && !reportNote && selectedFiles.length === 0) {
-            return alert("⚠️ POP ไม่ครบ: กรุณาระบุรายละเอียด หรือแนบรูปภาพ");
+        else if (isMissing && !reportNote && selectedFiles.length === 0) {
+            return alert("⚠️ Missing POP: Please provide details or attach images");
         } else if (isDefectMode) {
-            if (!reportNote) return alert("⚠️ แจ้งชำรุด: กรุณาระบุรายละเอียด");
-            if (selectedFiles.length === 0) return alert("⚠️ แจ้งชำรุด: กรุณาแนบรูปภาพ");
+            if (!reportNote) return alert("⚠️ Reporting Defect: Please provide details");
+            if (selectedFiles.length === 0) return alert("⚠️ Reporting Defect: Please attach images");
         } else if (!isMissing && !isDefectMode && selectedFiles.length === 0) {
-            return alert("⚠️ ได้รับ POP ครบ: กรุณาถ่ายรูป/วิดีโอยืนยันการรับของ");
+            return alert("⚠️ All POP Received: Please take a photo/video to confirm receipt");
         }
 
         setIsSubmitting(true);
@@ -435,15 +458,15 @@ if (isAllMissing){
             // Alert Message
             let msg = "";
             if(isAllMissing){
-                msg=`⚠️ บันทึกข้อมูลแล้ว ยังไม่ได้รับ POP\nเหตุผล: ${reportNote}`;
+                msg=`⚠️ Data saved (POP not received yet)\nReason: ${reportNote}`;
             } else if (isMissing) {
-                msg = `⚠️ บันทึกข้อมูลแล้ว (POP ที่ยังไม่ได้รับ ${missingList.length} รายการ):\n\n`;
+                msg = `⚠️ Data saved (${missingList.length} missing POP items):\n\n`;
                 msg += missingList.join("\n");
-                msg += `\n\n================\nระบบได้แจ้งเตือนฝ่ายที่เกี่ยวข้องแล้ว`;
+                msg += `\n\n================\nThe system has notified relevant departments.`;
             } else if (isDefectMode) {
-                msg = `✅ บันทึกข้อมูลสำเร็จ (แจ้งชำรุด)`;
+                msg = `✅ Data saved successfully (Defect Reported)`;
             } else {
-                msg = `✅ บันทึกข้อมูลสำเร็จ (ได้รับ POP ครบถ้วน)\nขอบคุณ`;
+                msg = `✅ Data saved successfully (Received All POP)\nThank you`;
             }
             alert(msg);
 
@@ -460,7 +483,7 @@ if (isAllMissing){
 
         } catch (error) {
             console.error(error);
-            alert("❌ เกิดข้อผิดพลาดในการส่งข้อมูล");
+            alert("❌ Error sending data");
         } finally {
             setIsSubmitting(false);
         }
@@ -468,7 +491,7 @@ if (isAllMissing){
 
     // --- SEARCH HISTORY ---
     const handleSearchHistory = async () => {
-        if (!selectedBranch || !selectedDate) return alert("เลือกสาขาและวันที่ก่อนค้นหา");
+        if (!selectedBranch || !selectedDate) return alert("Please select branch and date before searching");
         setIsHistoryLoading(true);
         setHistoryData(null);
 
@@ -481,11 +504,11 @@ if (isAllMissing){
                 
                 setHistoryData(data[data.length - 1]); 
             } else {
-                alert("ไม่พบประวัติการบันทึกของวันนี้");
+                alert("No record found for today");
             }
         } catch (error) {
             console.error(error);
-            alert("เกิดข้อผิดพลาดในการดึงประวัติ");
+            alert("Error fetching history");
         } finally {
             setIsHistoryLoading(false);
         }
@@ -504,13 +527,13 @@ if (isAllMissing){
         if (!element) return;
         
         setIsSubmitting(true);
-const elementsToHide = element.querySelectorAll('.hide-on-pdf');
-const originalStyles: string[] = [];
-    elementsToHide.forEach((el) => {
-         const htmlEl = el as HTMLElement;
-         originalStyles.push(htmlEl.style.display);
-         htmlEl.style.display = 'none'; // ซ่อนชั่วคราว
-    });
+        const elementsToHide = element.querySelectorAll('.hide-on-pdf');
+        const originalStyles: string[] = [];
+        elementsToHide.forEach((el) => {
+            const htmlEl = el as HTMLElement;
+            originalStyles.push(htmlEl.style.display);
+            htmlEl.style.display = 'none'; // Temporarily hide
+        });
         const opt = {
             margin:       10, 
             filename:     `POP_Report_${selectedBranch}_${selectedDate}.pdf`,
@@ -519,36 +542,36 @@ const originalStyles: string[] = [];
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-  (import('html2pdf.js') as any).then((html2pdf: any) => {
-         html2pdf.default().set(opt).from(element).save().then(() => {
- 
-             elementsToHide.forEach((el, index) => {
-                 (el as HTMLElement).style.display = originalStyles[index];
-             });
-             setIsSubmitting(false);
-         });
+        (import('html2pdf.js') as any).then((html2pdf: any) => {
+                html2pdf.default().set(opt).from(element).save().then(() => {
         
-    });
-};
+                    elementsToHide.forEach((el, index) => {
+                        (el as HTMLElement).style.display = originalStyles[index];
+                    });
+                    setIsSubmitting(false);
+                });
+                
+            });
+    };
 
 
     // --- Logic UI ---
     const isComplete = progress.isComplete;
     let reportClass = 'mode-incomplete';
     let reportIcon = '📝';
-    let reportTitle = 'แจ้งปัญหา / ยังได้รับPOPไม่ครบ';
-    let btnText = '🚀 ยืนยันและส่งรายงาน';
+    let reportTitle = 'Report Issue / Missing POP';
+    let btnText = '🚀 Confirm and Submit Report';
 
     if (isComplete && !isDefectMode) {
         reportClass = 'mode-complete';
         reportIcon = '✅';
-        reportTitle = 'ยืนยันการรับของครบถ้วน';
-        btnText = '✅ ยืนยันการรับของ (Submit All)';
+        reportTitle = 'Confirm Complete Receipt';
+        btnText = '✅ Confirm Receipt (Submit All)';
     } else if (isDefectMode) {
         reportClass = 'mode-incomplete';
         reportIcon = '⚠️';
-        reportTitle = 'รายงาน POP ชำรุด/เสียหาย';
-        btnText = '🚀 ส่งรายงานความเสียหาย';
+        reportTitle = 'Report Damaged/Defective POP';
+        btnText = '🚀 Submit Damage Report';
     }
 
     return (
@@ -556,7 +579,7 @@ const originalStyles: string[] = [];
             {isSubmitting && (
                 <div className="loading-overlay">
                     <div className="spinner"></div>
-                    <p style={{ marginTop: 15, fontWeight: 600, color: '#ea580c' }}>กำลังทำงาน...</p>
+                    <p style={{ marginTop: 15, fontWeight: 600, color: '#ea580c' }}>Processing...</p>
                 </div>
             )}
 
@@ -603,274 +626,270 @@ const originalStyles: string[] = [];
                 {loadingStatus === 'error' && <div className="loading-pill error">❌ Disconnect</div>}
             </div>
 
-   
-          <div className="controls-card">
-            
-                <div className="input-group">
-                    <label>1. เลือกสาขา (Branch)</label>
-                    <select 
-                        value={selectedBranch} 
-                        onChange={(e) => setSelectedBranch(e.target.value)}
-                        disabled={loadingStatus !== 'ready'}
-                    >
-                        <option value="">-- กรุณาเลือกสาขา --</option>
-                        {branches.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                </div>
-
-               
-                {mode === 'entry' ? (
-                   
-                    <div className="input-group">
-                        <label>2. หมวดหมู่ (Category)</label>
-                        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-                            <option value="all">แสดงทั้งหมด (All)</option>
-                            <option value="RE-Brand">RE-Brand</option>
-                            <option value="RE-System">RE-System</option>
-                            <option value="Special-POP">Special POP</option>
-                        </select>
-                    </div>
-                ) : (
-                
-                    <div className="input-group">
-                        <label>2. วันที่ (Date) <span className="required">*</span></label>
-                        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                    </div>
-                )}
-
-          
-                {mode === 'entry' ? (
-             
-                    <div className="input-group">
-                        <label>3. วันที่ (Date) <span className="required">*</span></label>
-                        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                    </div>
-                ) : (
-             
-                    <div className="input-group" style={{display: 'flex', alignItems: 'end'}}>
-                        <button 
-                            onClick={handleSearchHistory} 
-                            disabled={isHistoryLoading}
-                            style={{ 
-                                width: '100%', padding: '12px', background: '#0ea5e9', color: 'white', 
-                                border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 'bold' 
-                            }}
-                        >
-                            {isHistoryLoading ? '⏳ Searching...' : '🔍 Search History'}
-                        </button>
-                    </div>
-                )}
-            </div>
-
-           
-            {mode === 'entry' && selectedBranch && filteredData.length > 0 && (
+            {loadingStatus === 'loading' ? (
+                <SkeletonLoader />
+            ) : (
                 <>
-                    <div className="progress-section">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 5, color: 'var(--text-sub)' }}>
-                            <span>ความคืบหน้าการตรวจรับ</span>
-                            <span>{progress.count}/{progress.total} ({progress.percent}%)</span>
+                    <div className="controls-card">
+                        <div className="input-group">
+                            <label>1. Select Branch</label>
+                            <select 
+                                value={selectedBranch} 
+                                onChange={(e) => setSelectedBranch(e.target.value)}
+                                disabled={loadingStatus !== 'ready'}
+                            >
+                                <option value="">-- Please Select Branch --</option>
+                                {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
                         </div>
-                        <div className="progress-container">
-                            <div className="progress-bar" style={{ width: `${progress.percent}%` }}></div>
-                        </div>
+
+                        {mode === 'entry' ? (
+                            <div className="input-group">
+                                <label>2. Category</label>
+                                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                                    <option value="all">Show All</option>
+                                    <option value="RE-Brand">RE-Brand</option>
+                                    <option value="RE-System">RE-System</option>
+                                    <option value="Special-POP">Special POP</option>
+                                </select>
+                            </div>
+                        ) : (
+                            <div className="input-group">
+                                <label>2. Date <span className="required">*</span></label>
+                                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                            </div>
+                        )}
+
+                        {mode === 'entry' ? (
+                            <div className="input-group">
+                                <label>3. Date <span className="required">*</span></label>
+                                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                            </div>
+                        ) : (
+                            <div className="input-group" style={{display: 'flex', alignItems: 'end'}}>
+                                <button 
+                                    onClick={handleSearchHistory} 
+                                    disabled={isHistoryLoading}
+                                    style={{ 
+                                        width: '100%', padding: '12px', background: '#0ea5e9', color: 'white', 
+                                        border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 'bold' 
+                                    }}
+                                >
+                                    {isHistoryLoading ? '⏳ Searching...' : '🔍 Search History'}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="result-card">
-                        <div className="result-header">
-                            <span className="branch-title">{selectedBranch}</span>
-                            <span className="total-badge">รวม {filteredData.length} รายการ</span>
-                        </div>
-                        <div className="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th style={{ width: 50 }}>หมวด</th>
-                                        <th>รายการ</th>
-                                        
-                                        <th style={{ width: 40, textAlign: 'center' }}>จำนวน</th>
-
-                                        <th style={{width:60, textAlign: 'center' }}>
-                                <div style={{display:'flex', flexDirection:'column', alignItems:'center',gap:2}}>
-                                    <span style={{fontSize: '0.6rem'}}>รับแล้ว</span>
-                                    <input 
-                                        type="checkbox" 
-                                        className="custom-checkbox header-checkbox"
-                                        checked={isAllSelected}
-                                        onChange={handleSelectAll}
-                                        disabled={!selectedDate || filteredData.length === 0}
-                                    />
+                    {mode === 'entry' && selectedBranch && filteredData.length > 0 && (
+                        <>
+                            <div className="progress-section">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 5, color: 'var(--text-sub)' }}>
+                                    <span>Inspection Progress</span>
+                                    <span>{progress.count}/{progress.total} ({progress.percent}%)</span>
                                 </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredData.map(row => {
-                            const isChecked = !!checkedItems[row.id];
-                                        return (
-                                            <tr key={row.id} className={isChecked ? 'checked-row' : ''} onClick={() => handleToggleCheck(row.id)}>
-                                                <td><span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f1f5f9', borderRadius: 4, color: '#64748b' }}>{row.category.replace('RE-', '').replace('Special-', '')}</span></td>
-                                                <td className="item-name" style={{ color: '#334155', whiteSpace: 'normal', pointerEvents: 'none' }}>{row.item}</td>
-                                                <td style={{ textAlign: 'center', pointerEvents: 'none' }}><span className="qty-pill">{row.qty}</span></td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                                        <input type="checkbox" className="custom-checkbox" checked={isChecked} readOnly style={{ pointerEvents: 'none' }} disabled={!selectedDate} />
+                                <div className="progress-container">
+                                    <div className="progress-bar" style={{ width: `${progress.percent}%` }}></div>
+                                </div>
+                            </div>
+
+                            <div className="result-card">
+                                <div className="result-header">
+                                    <span className="branch-title">{selectedBranch}</span>
+                                    <span className="total-badge">Total {filteredData.length} items</span>
+                                </div>
+                                <div className="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th style={{ width: 50 }}>Category</th>
+                                                <th>Item</th>
+                                                
+                                                <th style={{ width: 40, textAlign: 'center' }}>Qty</th>
+
+                                                <th style={{width:60, textAlign: 'center' }}>
+                                                    <div style={{display:'flex', flexDirection:'column', alignItems:'center',gap:2}}>
+                                                        <span style={{fontSize: '0.6rem'}}>Received</span>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="custom-checkbox header-checkbox"
+                                                            checked={isAllSelected}
+                                                            onChange={handleSelectAll}
+                                                            disabled={!selectedDate || filteredData.length === 0}
+                                                        />
                                                     </div>
-                                                </td>
+                                                </th>
                                             </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div className={`report-section ${reportClass}`}>
-                        <div className="report-header">
-                            <div><span style={{ marginRight: 8 }}>{reportIcon}</span><span>{reportTitle}</span></div>
-                            {(isComplete || isDefectMode) && (
-                                <button className={`defect-toggle-btn ${isDefectMode ? 'active' : ''}`} onClick={() => setIsDefectMode(!isDefectMode)}>
-                                    {isDefectMode ? '↩️ ยกเลิกแจ้งชำรุด' : '⚠️ พบ POP ชำรุด?'}
-                                </button>
-                            )}
-                        </div>
-                        <div className="report-grid">
-                            {(!isComplete || isDefectMode) && (
-                                <div>
-                                    <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: 5 }}>รายละเอียดปัญหา</label>
-                                    <textarea rows={3} placeholder="ระบุรายการ POP ที่หายไป หรือเสียหาย..." value={reportNote} onChange={(e) => setReportNote(e.target.value)} />
-                                </div>
-                            )}
-                            <div>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: 5 }}>แนบรูปภาพ/วิดีโอ (จำเป็น)</label>
-                                <div className="upload-box">
-                                    <input type="file" className="upload-input" accept="image/*,video/*" multiple onChange={handleFileSelect} />
-                                    <div style={{ fontSize: 24, marginBottom: 5, color: '#fb923c' }}>📷 🎥</div>
-                                    <div style={{ color: '#f97316', fontSize: '0.85rem', fontWeight: 600, pointerEvents: 'none' }}>กดเพื่อถ่ายรูป/วิดีโอ หรือเลือกไฟล์<br /><span style={{ color: 'red', fontSize: '0.7rem' }}>(รวมไม่เกิน 10 ไฟล์)</span></div>
-                                </div>
-                                <div className="preview-grid">
-                                    {selectedFiles.map((file, index) => {
-                                        const url = URL.createObjectURL(file);
-                                        return (
-                                            <div key={index} className="preview-item">
-                                                {file.type.startsWith('video/') ? <video src={url} className="preview-media" controls /> : <img src={url} alt="preview" className="preview-media" />}
-                                                <div className="delete-btn" onClick={() => removeFile(index)}>×</div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                            <button className="btn-submit" onClick={handleSubmit}>{btnText}</button>
-                        </div>
-                    </div>
-                </>
-            )}
-
-       
-            {mode === 'history' && (
-                <div className="result-card" style={{ padding: 20, minHeight: 300 }}>
-                    {!historyData && !isHistoryLoading && (
-                        <div className="empty-state">
-                            <span>🔍</span>
-                            <p>เลือกสาขาและวันที่ แล้วกดปุ่ม "ค้นหาประวัติ"</p>
-                        </div>
-                    )}
-
-                    {isHistoryLoading && (
-                         <div className="empty-state">
-                            <div className="spinner" style={{margin:'0 auto'}}></div>
-                            <p>กำลังดึงข้อมูล...</p>
-                        </div>
-                    )}
-
-                    {historyData && (
-                        <div>
-                            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'flex-end' }}>
-                                <button onClick={handleDownloadPDF} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                    🖨️ Export PDF / Print
-                                </button>
-                            </div>
-
-                          
-                            <div ref={componentRef} style={{ padding: 40, background: 'white', color: '#000' }}>
-                                <div style={{textAlign: 'center', marginBottom: 20, borderBottom: '2px solid #eee', paddingBottom: 10}}>
-                                    <h2 style={{ margin: 0 }}>POP Receive Tracking Order</h2>
-                                    <p style={{ margin: '5px 0 0 0', color: '#666' }}>POP Receive Tracking Order System</p>
-                                </div>
-                                
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20, fontSize: '0.9rem' }}>
-                                    <div><strong>🏠 สาขา:</strong> {historyData.branch}</div>
-                                    <div style={{textAlign: 'right'}}><strong>📅 วันที่ตรวจสอบ:</strong> {historyData.date}</div>
-                                </div>
-
-                                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: '0.85rem' }}>
-                                    <thead>
-                                        <tr style={{ background: '#f1f5f9', color: '#333' }}>
-                                            <th style={{ border: '1px solid #ddd', padding: 8 }}>รายการ (Item)</th>
-                                            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center', width: 60 }}>จำนวน</th>
-                                            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center', width: 100 }}>สถานะ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {(() => {
-                                            try {
-                                                const items: SnapshotItem[] = JSON.parse(historyData.items);
-                                                return items.map((item, idx) => (
-                                                    <tr key={idx}>
-                                                        <td style={{ border: '1px solid #ddd', padding: 8 }}>{item.item}</td>
-                                                        <td style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center' }}>{item.qty}</td>
-                                                        <td style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center', fontWeight: 'bold', color: item.isChecked ? '#16a34a' : '#dc2626' }}>
-                                                            {item.isChecked ? '✅ ได้รับครบ' : '❌ ยังไม่ได้รับ'}
+                                        </thead>
+                                        <tbody>
+                                            {filteredData.map(row => {
+                                                const isChecked = !!checkedItems[row.id];
+                                                return (
+                                                    <tr key={row.id} className={isChecked ? 'checked-row' : ''} onClick={() => handleToggleCheck(row.id)}>
+                                                        <td><span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f1f5f9', borderRadius: 4, color: '#64748b' }}>{row.category.replace('RE-', '').replace('Special-', '')}</span></td>
+                                                        <td className="item-name" style={{ color: '#334155', whiteSpace: 'normal', pointerEvents: 'none' }}>{row.item}</td>
+                                                        <td style={{ textAlign: 'center', pointerEvents: 'none' }}><span className="qty-pill">{row.qty}</span></td>
+                                                        <td style={{ textAlign: 'center' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                                                <input type="checkbox" className="custom-checkbox" checked={isChecked} readOnly style={{ pointerEvents: 'none' }} disabled={!selectedDate} />
+                                                            </div>
                                                         </td>
                                                     </tr>
-                                                ));
-                                            } catch (e) {
-                                                return <tr><td colSpan={3} style={{textAlign:'center', padding:20, color:'red'}}>⚠️ ไม่สามารถโหลดรายการPOPได้ (ข้อมูลอาจเสียหาย)</td></tr>;
-                                            }
-                                        })()}
-                                    </tbody>
-                                </table>
-
-                                {historyData.missing && historyData.missing !== "-" && (
-                                    <div className="hide-on-pdf" style={{ marginTop: 20, padding: 15, border: '1px solid #fca5a5', background: '#fef2f2', borderRadius: 8 }}>
-                                        <h4 style={{ margin: '0 0 10px 0', color: '#b91c1c' }}>⚠️ รายการที่ยังไม่ได้รับ / แจ้งปัญหา:</h4>
-                                        <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'Sarabun, sans-serif', margin: 0, fontSize: '0.9rem' }}>{historyData.missing}</pre>
-                                    </div>
-                                )}
-
-                                <div style={{ marginTop: 20, padding: 15, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                                    <strong>📝 หมายเหตุ:</strong> {historyData.note || "-"}
-                                </div>
-
-                                <div style={{ marginTop: 50, textAlign: 'center', paddingTop: 20 }}>
-                                    {/* <div style={{ borderTop: '1px solid #ddd', display: 'inline-block', paddingTop: 10, width: 200 }}>
-                                        ลงชื่อผู้ตรวจสอบ
-                                    </div> */}
-                                    <div style={{ fontSize: '0.8rem', color: '#999', marginTop: 5 }}>
-                                        (บันทึกอัตโนมัติเมื่อ {historyData.date})
-                                    </div>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
+
+                            <div className={`report-section ${reportClass}`}>
+                                <div className="report-header">
+                                    <div><span style={{ marginRight: 8 }}>{reportIcon}</span><span>{reportTitle}</span></div>
+                                    {(isComplete || isDefectMode) && (
+                                        <button className={`defect-toggle-btn ${isDefectMode ? 'active' : ''}`} onClick={() => setIsDefectMode(!isDefectMode)}>
+                                            {isDefectMode ? '↩️ Cancel Defect Report' : '⚠️ Found Defect?'}
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="report-grid">
+                                    {(!isComplete || isDefectMode) && (
+                                        <div>
+                                            <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: 5 }}>Issue Details</label>
+                                            <textarea rows={3} placeholder="Specify missing or damaged POP items..." value={reportNote} onChange={(e) => setReportNote(e.target.value)} />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: 5 }}>Attach Photo/Video (Required)</label>
+                                        <div className="upload-box">
+                                            <input type="file" className="upload-input" accept="image/*,video/*" multiple onChange={handleFileSelect} />
+                                            <div style={{ fontSize: 24, marginBottom: 5, color: '#fb923c' }}>📷 🎥</div>
+                                            <div style={{ color: '#f97316', fontSize: '0.85rem', fontWeight: 600, pointerEvents: 'none' }}>Tap to take photo/video or select files<br /><span style={{ color: 'red', fontSize: '0.7rem' }}>(Max 10 files)</span></div>
+                                        </div>
+                                        <div className="preview-grid">
+                                            {selectedFiles.map((file, index) => {
+                                                const url = URL.createObjectURL(file);
+                                                return (
+                                                    <div key={index} className="preview-item">
+                                                        {file.type.startsWith('video/') ? <video src={url} className="preview-media" controls /> : <img src={url} alt="preview" className="preview-media" />}
+                                                        <div className="delete-btn" onClick={() => removeFile(index)}>×</div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                    <button className="btn-submit" onClick={handleSubmit}>{btnText}</button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {mode === 'history' && (
+                        <div className="result-card" style={{ padding: 20, minHeight: 300 }}>
+                            {!historyData && !isHistoryLoading && (
+                                <div className="empty-state">
+                                    <span>🔍</span>
+                                    <p>Select branch and date, then press "Search History"</p>
+                                </div>
+                            )}
+
+                            {isHistoryLoading && (
+                                <div className="empty-state">
+                                    <div className="spinner" style={{margin:'0 auto'}}></div>
+                                    <p>Fetching data...</p>
+                                </div>
+                            )}
+
+                            {historyData && (
+                                <div>
+                                    <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button onClick={handleDownloadPDF} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                            🖨️ Export PDF / Print
+                                        </button>
+                                    </div>
+
+                                
+                                    <div ref={componentRef} style={{ padding: 40, background: 'white', color: '#000' }}>
+                                        <div style={{textAlign: 'center', marginBottom: 20, borderBottom: '2px solid #eee', paddingBottom: 10}}>
+                                            <h2 style={{ margin: 0 }}>POP Receive Tracking Order</h2>
+                                            <p style={{ margin: '5px 0 0 0', color: '#666' }}>POP Receive Tracking Order System</p>
+                                        </div>
+                                        
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20, fontSize: '0.9rem' }}>
+                                            <div><strong>🏠 Branch:</strong> {historyData.branch}</div>
+                                            <div style={{textAlign: 'right'}}><strong>📅 Date Checked:</strong> {historyData.date}</div>
+                                        </div>
+
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: '0.85rem' }}>
+                                            <thead>
+                                                <tr style={{ background: '#f1f5f9', color: '#333' }}>
+                                                    <th style={{ border: '1px solid #ddd', padding: 8 }}>Item</th>
+                                                    <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center', width: 60 }}>Qty</th>
+                                                    <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center', width: 100 }}>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(() => {
+                                                    try {
+                                                        const items: SnapshotItem[] = JSON.parse(historyData.items);
+                                                        return items.map((item, idx) => (
+                                                            <tr key={idx}>
+                                                                <td style={{ border: '1px solid #ddd', padding: 8 }}>{item.item}</td>
+                                                                <td style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center' }}>{item.qty}</td>
+                                                                <td style={{ border: '1px solid #ddd', padding: 8, textAlign: 'center', fontWeight: 'bold', color: item.isChecked ? '#16a34a' : '#dc2626' }}>
+                                                                    {item.isChecked ? '✅ Received' : '❌ Not Received'}
+                                                                </td>
+                                                            </tr>
+                                                        ));
+                                                    } catch (e) {
+                                                        return <tr><td colSpan={3} style={{textAlign:'center', padding:20, color:'red'}}>⚠️ Cannot load POP items (Data might be corrupted)</td></tr>;
+                                                    }
+                                                })()}
+                                            </tbody>
+                                        </table>
+
+                                        {historyData.missing && historyData.missing !== "-" && (
+                                            <div className="hide-on-pdf" style={{ marginTop: 20, padding: 15, border: '1px solid #fca5a5', background: '#fef2f2', borderRadius: 8 }}>
+                                                <h4 style={{ margin: '0 0 10px 0', color: '#b91c1c' }}>⚠️ Missing Items / Reported Issues:</h4>
+                                                <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'Sarabun, sans-serif', margin: 0, fontSize: '0.9rem' }}>{historyData.missing}</pre>
+                                            </div>
+                                        )}
+
+                                        <div style={{ marginTop: 20, padding: 15, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                                            <strong>📝 Note:</strong> {historyData.note || "-"}
+                                        </div>
+
+                                        <div style={{ marginTop: 50, textAlign: 'center', paddingTop: 20 }}>
+                                            {/* <div style={{ borderTop: '1px solid #ddd', display: 'inline-block', paddingTop: 10, width: 200 }}>
+                                                Signature
+                                            </div> */}
+                                            <div style={{ fontSize: '0.8rem', color: '#999', marginTop: 5 }}>
+                                                (Auto-saved on {historyData.date})
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
-                </div>
+                </>
             )}
 
             {/* Empty States */}
             {mode === 'entry' && !selectedBranch && (
                 <div className="empty-state">
                     <span>👈</span>
-                    <p>เลือกสาขาเพื่อเริ่มเช็ค POP</p>
+                    <p>Select a branch to start checking POP</p>
                 </div>
             )}
              {mode === 'entry' && selectedBranch && filteredData.length === 0 && (
                 <div className="empty-state">
                     <span>📭</span>
-                    <p>ไม่พบรายการ POP สำหรับสาขานี้</p>
+                    <p>No POP items found for this branch</p>
                 </div>
             )}
 
             <div style={{ textAlign: 'center', marginTop: 30, fontSize: '0.75rem', color: '#94a3b8' }}>
-                * ข้อมูลจะถูกบันทึกลง Google Sheet
+                * Data will be saved to Google Sheet
             </div>
         </div>
     );
