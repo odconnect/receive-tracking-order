@@ -47,7 +47,7 @@ type LoadingStatus = 'loading' | 'ready' | 'error';
 type AppMode = 'entry' | 'history';
 
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4qa-JfENXHyM6sKVko_X4zTiITnXKSGOQM4KAxVjuhx8VK_yL1mKiv0IbSI78b5iE/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyN7OGdhZ4e0w2YXqfyFzTW-rJpm0oJt0PvPPd4L2kfx4ztZ_aXuEDWH8-VZvp4qiWf/exec";
 
 const SHEET_URLS = {
     brand: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=577319442",
