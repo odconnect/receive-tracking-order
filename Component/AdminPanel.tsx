@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 
 interface DailyStatus { date: string; submitted: string[]; notSubmitted: string[]; }
-interface BranchSummary { branch: string; dates: string[]; }
+
 
 interface AdminPanelProps {
     branches: string[];

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, type ChangeEvent } from 'react';
+import React, { useState, useEffect, useMemo,  type ChangeEvent } from 'react';
 import './PopTracking.css';
 import AdminPanel from './AdminPanel'; 
 import HistoryPanel from './HistoryPanel'; 
@@ -88,10 +88,10 @@ const PopTracking: React.FC = () => {
                 
                 let allData: InventoryItem[] = [];
                 const allBranches = new Set<string>();
-                const collectedTracking: Record<string, Set<string>> = {}; 
+        
 
                 const parseData = (csv: string, catName: string) => {
-                    const parsed = parseCSV(csv, catName, allBranches, collectedTracking);
+                    const parsed = parseCSV(csv, catName, allBranches);
                     allData = [...allData, ...parsed];
                 };
 
@@ -320,7 +320,7 @@ const parseTrackingCSV = (
         csvText: string, 
         categoryName: string, 
         branchSet: Set<string>, 
-        trackingCollector: Record<string, Set<string>>
+   
     ): InventoryItem[] => {
         if (!csvText) return [];
         const lines = csvText.trim().split('\n');
@@ -472,12 +472,7 @@ const filteredData = useMemo<InventoryItem[]>(() => {
         else { filteredData.forEach(item => { newCheckedState[item.id] = true; localStorage.setItem('pop_check_' + item.id, 'true'); }); }
         setCheckedItems(newCheckedState);
     };
-    const handleClearSelection = () => {
-        if (!confirm('Are you sure you want to clear all selections for this view?')) return;
-        const newCheckedState = { ...checkedItems };
-        filteredData.forEach(item => { delete newCheckedState[item.id]; localStorage.removeItem('pop_check_' + item.id); });
-        setCheckedItems(newCheckedState);
-    };
+ 
     const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files; if (!files) return;
         const fileList = Array.from(files); const MAX_FILE_SIZE_MB = 20; const MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; 
