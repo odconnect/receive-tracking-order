@@ -243,7 +243,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ branches, scriptUrl, onClose })
       {activeTab === "shipment" && (
         <AdminShipmentPanel
           scriptUrl={scriptUrl}
-          onClose={() => setActiveTab("report")}
+        //   onClose={() => setActiveTab("report")}
         />
       )}
 

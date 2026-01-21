@@ -5,7 +5,7 @@ import HistoryPanel from './HistoryPanel';
 // import OrderPanel from './OrderPanel'; 
 import {
   normalizeBranchKey,
-  resolveCanonicalBranch
+//   resolveCanonicalBranch
 } from './utils/branchResolver';
 
 // --- Type Definitions ---
@@ -29,21 +29,22 @@ interface OrderData {
 
 // Updated Payload Interface
 interface SubmitPayload { 
-    branch: string; 
-    trackingNo: string; 
-    category: string; 
-    date: string; 
-    note: string; 
-    images: string[]; 
-    missingItems: string; 
-    itemsSnapshot: SnapshotItem[]; 
-    // New Fields
-    signerName: string; // <-- เพิ่มช่องชื่อ
-    signerRole: string;
-    signatureImage: string; 
+  branch: string; 
+  trackingNo: string; 
+  orderNo: string;        // ✅ add this
+  category: string; 
+  date: string; 
+  note: string; 
+  images: string[]; 
+  missingItems: string; 
+  itemsSnapshot: SnapshotItem[]; 
+  signerName: string;
+  signerRole: string;
+  signatureImage: string; 
 }
 
-interface TrackingInfo { number: string; type: 'POP' | 'Equipment'; }
+
+// interface TrackingInfo { number: string; type: 'POP' | 'Equipment'; }
 
 type LoadingStatus = 'loading' | 'ready' | 'error';
 type AppMode = 'entry' | 'history' | 'admin';
@@ -99,7 +100,7 @@ const [selectedCategoryType, setSelectedCategoryType] =
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     
-const [ordersLoaded, setOrdersLoaded] = useState(false);
+// const [ordersLoaded, setOrdersLoaded] = useState(false);
     const [signerName, setSignerName] = useState<string>(''); 
     const [signerRole, setSignerRole] = useState<string>('');
     const [isAccepted, setIsAccepted] = useState<boolean>(false);
@@ -122,7 +123,7 @@ const [orders, setOrders] = useState<OrderData[]>([]);
         setCheckedItems(savedChecks);
         const loadAllData = async () => {
             try {
-                const [brandData, systemData, specialData, equipmentData, trackingData] = await Promise.all([
+                const [brandData, systemData, specialData, equipmentData] = await Promise.all([
                     fetchData(SHEET_URLS.brand), 
                     fetchData(SHEET_URLS.system), 
                     fetchData(SHEET_URLS.special), 
@@ -145,7 +146,7 @@ const [orders, setOrders] = useState<OrderData[]>([]);
                 const equipmentItems = parseEquipmentCSV(equipmentData, "Equipment-Order", allBranches);
                 allData = [...allData, ...equipmentItems];
 
-                const parsedTrackingMap = parseTrackingCSV(trackingData, allBranches);
+                // const parsedTrackingMap = parseTrackingCSV(trackingData, allBranches);
                 const sortedBranches = Array.from(allBranches).sort().filter(b => b.length > 2 && !b.includes("Total") && !b.includes("POP"));
                 
                 setDatabase(allData); 
@@ -242,13 +243,13 @@ useEffect(() => {
     };
 
     // Helper for category switching
-    const handleCategoryAutoSwitch = (type: 'POP' | 'Equipment') => {
-        if (type === 'Equipment') { 
-            setSelectedCategory('Equipment-Order'); 
-        } else { 
-            setSelectedCategory('all'); 
-        }
-    };
+    // const handleCategoryAutoSwitch = (type: 'POP' | 'Equipment') => {
+    //     if (type === 'Equipment') { 
+    //         setSelectedCategory('Equipment-Order'); 
+    //     } else { 
+    //         setSelectedCategory('all'); 
+    //     }
+    // };
 
     // --- UPDATED: Handle Tracking Change ---
 const handleTrackingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -270,11 +271,11 @@ const handleTrackingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         for (let i = dataStartIndex; i < rows.length; i++) { const row = rows[i]; if (row.length < 2) continue; const rawBranch = row[1]?.trim(); if (!rawBranch) continue; let branch = ""; if (branchSet.has(rawBranch)) { branch = rawBranch; } else { const target = rawBranch.replace(/\s+/g, '').toLowerCase(); for (const existing of branchSet) { if (existing.replace(/\s+/g, '').toLowerCase() === target) { branch = existing; break; } } } if (!branch) continue; for (let col = 3; col < subHeaders.length; col++) { const header = subHeaders[col]; if (!header || header.toLowerCase().includes('total')) continue; const item = header.replace(/^Quantity\s*/i, '').trim(); const qty = parseInt(row[col]?.replace(/,/g, '').trim() || '0', 10); if (qty > 0) { const key = `${branch}|${item}`; if (map.has(key)) { map.get(key)!.qty += qty; } else { map.set(key, { id: `EQ_${normalizeBranchKey(branch)}_${item}`.replace(/\s+/g, '_'), branch, branchKey: normalizeBranchKey(branch), category: categoryName, item, qty }); } } } }
         return Array.from(map.values());
     };
-    const parseTrackingCSV = (csvText: string, branchSet: Set<string>): Record<string, TrackingInfo[]> => {
-        const map: Record<string, TrackingInfo[]> = {}; const lines = csvText.trim().split('\n');
-        for (let i = 1; i < lines.length; i++) { const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); const rawBranch = row[0]?.replace(/^"|"$/g, '').trim(); if (!rawBranch) continue; const branch = resolveCanonicalBranch(rawBranch, branchSet); if (!branch) continue; const result: TrackingInfo[] = []; const pop = row[1]?.trim(); const equip = row[2]?.trim(); if (pop && pop !== '-' && pop !== '0') { pop.split(/[\n,]+/).forEach(n => result.push({ number: n.trim(), type: 'POP' })); } if (equip && equip !== '-' && equip !== '0') { equip.split(/[\n,]+/).forEach(n => result.push({ number: n.trim(), type: 'Equipment' })); } if (result.length) { map[branch] = map[branch] ? [...map[branch], ...result] : result; } }
-        return map;
-    };
+    // const parseTrackingCSV = (csvText: string, branchSet: Set<string>): Record<string, TrackingInfo[]> => {
+    //     const map: Record<string, TrackingInfo[]> = {}; const lines = csvText.trim().split('\n');
+    //     for (let i = 1; i < lines.length; i++) { const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); const rawBranch = row[0]?.replace(/^"|"$/g, '').trim(); if (!rawBranch) continue; const branch = resolveCanonicalBranch(rawBranch, branchSet); if (!branch) continue; const result: TrackingInfo[] = []; const pop = row[1]?.trim(); const equip = row[2]?.trim(); if (pop && pop !== '-' && pop !== '0') { pop.split(/[\n,]+/).forEach(n => result.push({ number: n.trim(), type: 'POP' })); } if (equip && equip !== '-' && equip !== '0') { equip.split(/[\n,]+/).forEach(n => result.push({ number: n.trim(), type: 'Equipment' })); } if (result.length) { map[branch] = map[branch] ? [...map[branch], ...result] : result; } }
+    //     return map;
+    // };
     const parseCSV = (csvText: string, categoryName: string, branchSet: Set<string>): InventoryItem[] => {
         if (!csvText) return []; const lines = csvText.trim().split('\n'); let headerIndex = -1; const branchIndices: Record<number, string> = {}; const parsedData: InventoryItem[] = [];
         for (let i = 0; i < lines.length; i++) { const line = lines[i]; if (line.includes("Head Office") || line.includes("Central World") || line.includes("Siam Paragon")) { headerIndex = i; const headers = lines[i].split(','); headers.forEach((h, index) => { const name = h.trim().replace(/^"|"$/g, ''); if (name && !name.includes("Total") && !name.includes("Tracking") && !name.includes("List") && !name.includes("No.") && !name.includes("Item") && !name.includes("Unit")) { branchSet.add(name); branchIndices[index] = name; } }); break; } }
@@ -310,20 +311,20 @@ const handleTrackingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         }
         return data;
     }, [database, selectedBranch, selectedCategory, searchTerm, selectedTrackingNo, availableTrackings]);
-const branchOrders = useMemo(() => {
-  if (!selectedBranch) return [];
+// const branchOrders = useMemo(() => {
+//   if (!selectedBranch) return [];
 
-  const branchKey = normalizeBranchKey(selectedBranch);
+//   const branchKey = normalizeBranchKey(selectedBranch);
 
-  return orders
-    .map(order => ({
-      ...order,
-      items: order.items.filter(
-        it => it.branchKey === branchKey
-      )
-    }))
-    .filter(order => order.items.length > 0);
-}, [orders, selectedBranch]);
+//   return orders
+//     .map(order => ({
+//       ...order,
+//       items: order.items.filter(
+//         it => it.branchKey === branchKey
+//       )
+//     }))
+//     .filter(order => order.items.length > 0);
+// }, [orders, selectedBranch]);
 
     const currentTableData = useMemo(() => {
         const indexOfLastItem = currentPage * itemsPerPage; const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -468,10 +469,10 @@ const loadOrders = async () => {
     }));
 
     setOrders(normalized);
-    setOrdersLoaded(true); // ✅ สำคัญ
+    // setOrdersLoaded(true); // ✅ สำคัญ
   } catch (err) {
     console.error("Failed to load orders", err);
-    setOrdersLoaded(true); // กันค้าง
+    // setOrdersLoaded(true); // กันค้าง
   }
 };
 
@@ -626,7 +627,7 @@ const pendingOrders = useMemo(() => {
     .filter(([tracking]) =>
       !selectedTrackingNo || tracking === selectedTrackingNo
     )
-    .map(([tracking, list]) => {
+    .map(([, list]) => {
       const branchOrders = list.filter(order =>
         order.items.some(
           it =>

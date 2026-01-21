@@ -12,10 +12,9 @@ interface ShipmentItem {
 
 interface Props {
   scriptUrl: string;
-  onClose: () => void;
 }
 
-const AdminShipmentPanel: React.FC<Props> = ({ scriptUrl, onClose }) => {
+const AdminShipmentPanel: React.FC<Props> = ({ scriptUrl }) => {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<ShipmentItem[]>([]);
 
