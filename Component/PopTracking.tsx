@@ -397,17 +397,16 @@ const handleSubmit = async () => {
   if (!isAccepted) return alert("⚠️ You must accept the confirmation.");
   if (!hasSignature) return alert("⚠️ Please sign your signature.");
 
-  const allBranchItems = database.filter(d => d.branch === selectedBranch);
+ const allItemsToSubmit = filteredData; 
 
-  const itemsSnapshot: SnapshotItem[] = allBranchItems.map(item => ({
+  const itemsSnapshot: SnapshotItem[] = allItemsToSubmit.map(item => ({
     id: item.id,
     item: item.item,
     qty: item.qty,
     category: item.category,
-    isChecked: !!checkedItems[item.id]
+    isChecked: !!checkedItems[item.id] 
   }));
-
-  const missingList = itemsSnapshot
+const missingList = itemsSnapshot
     .filter(item => !item.isChecked)
     .map(item => `- ${item.item} (Qty: ${item.qty})`);
 
@@ -427,14 +426,19 @@ const matchedOrder = orders.find(o =>
  
         o.items.some(it => normalizeBranchKey(it.branch) === normalizeBranchKey(selectedBranch))
     );
-
-    const finalOrderNo = matchedOrder ? matchedOrder.orderNo : "-";
+const orderNosInTracking = Array.from(new Set(
+        orders.filter(o => o.trackingNo === selectedTrackingNo)
+              .map(o => o.orderNo)
+    )).join(", ");
+    // const finalOrderNo = matchedOrder ? matchedOrder.orderNo : "-";
     const payload: SubmitPayload = {
       branch: selectedBranch,
-      trackingNo: selectedTrackingNo?.trim()
-        ? selectedTrackingNo
-        : "PENDING", // ✅ สำคัญที่สุด
-        orderNo: finalOrderNo,
+      // trackingNo: selectedTrackingNo?.trim()
+      //   ? selectedTrackingNo
+      //   : "PENDING", // ✅ สำคัญที่สุด
+      trackingNo: selectedTrackingNo || "PENDING",
+        // orderNo: finalOrderNo,
+        orderNo: orderNosInTracking || "-",
       category: selectedCategory,
       date: selectedDate,
       note: reportNote || "Received",
