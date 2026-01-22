@@ -420,12 +420,12 @@ const missingList = itemsSnapshot
 
     const signatureData =
       canvasRef.current?.toDataURL("image/png") || "";
-const matchedOrder = orders.find(o => 
+// const matchedOrder = orders.find(o => 
 
-        (o.trackingNo === selectedTrackingNo || (selectedTrackingNo === "PENDING" && o.trackingNo === "PENDING")) &&
+//         (o.trackingNo === selectedTrackingNo || (selectedTrackingNo === "PENDING" && o.trackingNo === "PENDING")) &&
  
-        o.items.some(it => normalizeBranchKey(it.branch) === normalizeBranchKey(selectedBranch))
-    );
+//         o.items.some(it => normalizeBranchKey(it.branch) === normalizeBranchKey(selectedBranch))
+//     );
 const orderNosInTracking = Array.from(new Set(
         orders.filter(o => o.trackingNo === selectedTrackingNo)
               .map(o => o.orderNo)
