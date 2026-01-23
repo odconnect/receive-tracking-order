@@ -49,7 +49,7 @@ interface SubmitPayload {
 type LoadingStatus = 'loading' | 'ready' | 'error';
 type AppMode = 'entry' | 'history' | 'admin';
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMnVsLyC7dPVnf6nkbOCMUBm_J5eWUwywViQc_iMHg3eLQAT-iMFMs9yMIJ-Arxcs/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVkmDVxjYHX89CViQUsrfPVU7K8Kc8XMK-KoWHcjz4qsC4KnW3DQHcWxqzeQ1r654K/exec";
 
 const SHEET_URLS = {
     brand: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=577319442",
