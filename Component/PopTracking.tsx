@@ -573,17 +573,17 @@ const PopTracking: React.FC = () => {
       }
     };
 
-    const groupedOrdersByTracking = useMemo(() => {
-      const map: Record<string, OrderData[]> = {};
+    // const groupedOrdersByTracking = useMemo(() => {
+    //   const map: Record<string, OrderData[]> = {};
 
-      orders.forEach(order => {
-        const key = order.trackingNo || "PENDING";
-        if (!map[key]) map[key] = [];
-        map[key].push(order);
-      });
+    //   orders.forEach(order => {
+    //     const key = order.trackingNo || "PENDING";
+    //     if (!map[key]) map[key] = [];
+    //     map[key].push(order);
+    //   });
 
-      return map;
-    }, [orders]);
+    //   return map;
+    // }, [orders]);
 
     const pendingOrders = useMemo(() => {
       if (!selectedBranch || !isPendingTracking || !selectedCategoryType) return [];
