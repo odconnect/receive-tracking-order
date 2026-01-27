@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 interface SnapshotItem {
   id: string;
   item: string;
+  size?: string;
   qty: number;
   category: string;
   isChecked: boolean;
@@ -232,6 +233,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ branches, scriptUrl }) => {
                 <thead>
                   <tr>
                     <th>Category</th>
+                      <th>Size</th>
                     <th>Item</th>
                     <th className="text-center">Qty</th>
                     <th className="text-center">Status</th>
@@ -244,6 +246,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ branches, scriptUrl }) => {
                       return items.map((item, idx) => (
                         <tr key={idx}>
                           <td>{item.category}</td>
+                           <td>{item.size}</td>
                           <td>{item.item}</td>
                           <td className="text-center">{item.qty}</td>
                           <td className={`text-center ${item.isChecked ? 'text-success' : 'text-danger'}`}>
