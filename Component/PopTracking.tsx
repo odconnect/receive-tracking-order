@@ -16,14 +16,14 @@ interface InventoryItem {
     branchKey: string;  
     category: string; 
     item: string; 
-    size: string; // ✅ Field Size
+    size: string; 
     qty: number; 
 }
 
 interface SnapshotItem { 
     id: string; 
     item: string; 
-    size: string; // ✅ Field Size for JSON
+    size: string; 
     qty: number; 
     category: string; 
     isChecked: boolean; 
@@ -64,7 +64,7 @@ interface SubmitPayload {
 type LoadingStatus = 'loading' | 'ready' | 'error';
 type AppMode = 'entry' | 'history' | 'admin';
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUKpfc5-0wgs5v92xKqnVas7GzGk_WfDB8FxZeNTi7DN_5xtnWRc7Kf6yGiTzH4IOD/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwH6D3Wgp1o4ZLCu_MUBVfJ6S9zShvZj1atiyZodIat_nniWeaKuVFqVmxt8V831NPc/exec";
 
 const SHEET_URLS = {
     brand: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=577319442",
@@ -88,9 +88,11 @@ const SkeletonLoader = () => {
 
 const PopTracking: React.FC = () => {
   
-    // ✅ เปิดใช้งาน Database State
     const [database, setDatabase] = useState<InventoryItem[]>([]);
     
+    // ✅ เพิ่ม State ใหม่สำหรับเก็บ Size Map โดยเฉพาะ
+    const [productSizeMap, setProductSizeMap] = useState<Map<string, string>>(new Map());
+
     const [branches, setBranches] = useState<string[]>([]);
     const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>('loading');
     const [mode, setMode] = useState<AppMode>('entry');
@@ -145,9 +147,13 @@ const PopTracking: React.FC = () => {
                 
                 let allData: InventoryItem[] = [];
                 const allBranches = new Set<string>();
+                
+                // ✅ สร้าง Map ชั่วคราวเพื่อเก็บ Size ของสินค้าทุกตัว
+                const tempSizeMap = new Map<string, string>();
         
+                // ส่ง tempSizeMap เข้าไปใน parseCSV ด้วย
                 const parseData = (csv: string, catName: string) => {
-                    const parsed = parseCSV(csv, catName, allBranches);
+                    const parsed = parseCSV(csv, catName, allBranches, tempSizeMap);
                     allData = [...allData, ...parsed];
                 };
 
@@ -158,12 +164,23 @@ const PopTracking: React.FC = () => {
                 const equipmentItems = parseEquipmentCSV(equipmentData, "Equipment-Order", allBranches);
                 allData = [...allData, ...equipmentItems];
 
-                const sortedBranches = Array.from(allBranches).sort().filter(b => b.length > 2 && !b.includes("Total") && !b.includes("POP"));
+                // ✅ Filter Branches (ไม่เอา Size มาปน)
+                const sortedBranches = Array.from(allBranches)
+                    .sort()
+                    .filter(b => {
+                        return (
+                            b.length > 2 && 
+                            !b.includes("Total") && 
+                            !b.includes("POP") && 
+                            !b.includes("No.") &&      
+                            !b.match(/^\d/) &&         
+                            !b.match(/\(W.*\)/)        
+                        );
+                    });
                 
-                // ✅ Save ข้อมูลลง State
                 setDatabase(allData); 
-                
                 setBranches(sortedBranches); 
+                setProductSizeMap(tempSizeMap); // ✅ บันทึก Map ลง State
                 setLoadingStatus('ready');
             } catch (error) { console.error(error); setLoadingStatus('error'); }
         };
@@ -263,8 +280,8 @@ const PopTracking: React.FC = () => {
         return Array.from(map.values());
     };
 
-    // ✅ แก้ไข parseCSV (รองรับ Merge Cell: ถ้า Size ว่าง ให้ใช้ค่าล่าสุด)
-    const parseCSV = (csvText: string, categoryName: string, branchSet: Set<string>): InventoryItem[] => {
+    // ✅ แก้ไข parseCSV เพื่อเก็บ Size ลง Map ทุกบรรทัด (ไม่สน Qty)
+    const parseCSV = (csvText: string, categoryName: string, branchSet: Set<string>, sizeMap: Map<string, string>): InventoryItem[] => {
         if (!csvText) return []; 
         const lines = csvText.trim().split('\n'); 
         let headerIndex = -1; 
@@ -316,6 +333,14 @@ const PopTracking: React.FC = () => {
             // ข้ามบรรทัด Header ย่อย หรือ Total
             if (!itemName || itemName.startsWith("Total") || itemName.toLowerCase().includes("tracking")) continue; 
             
+            // ✅ บันทึก Size ลง Map ทันที (เพื่อให้ filteredData เรียกใช้ได้ แม้สินค้าจะไม่มี Qty)
+            // ใช้ Key เป็น "Category|ItemName" เพื่อความชัวร์
+            const uniqueKey = `${categoryName}|${itemName.toLowerCase().replace(/\s+/g, "")}`;
+            sizeMap.set(uniqueKey, itemSize);
+
+            // บันทึกแบบชื่อล้วนด้วย (Backup)
+            sizeMap.set(itemName.toLowerCase().replace(/\s+/g, ""), itemSize);
+
             for (const [indexStr, branchName] of Object.entries(branchIndices)) { 
                 const index = parseInt(indexStr); 
                 const qtyStr = (row[index] || "0").trim().replace(/^"|"$/g, ''); 
@@ -336,7 +361,7 @@ const PopTracking: React.FC = () => {
         }
         return parsedData;
     };
-    // ✅ ฟังก์ชัน compressImage แบบปลอดภัย
+
     const compressImage = async (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
             if (file.type.includes('video')) {
@@ -373,59 +398,43 @@ const PopTracking: React.FC = () => {
         });
     };
 
-    // ✅ filteredData (Flexible Matching + Size Lookup)
-    // ✅ 3. แก้ไข filteredData (เติม Size ให้ครบทุกบรรทัด แม้ใน DB จะว่าง)
+    // ✅ 3. แก้ไข filteredData (ใช้ productSizeMap ดึง Size)
     const filteredData = useMemo<InventoryItem[]>(() => {
         if (!selectedBranch || !selectedTrackingNo || isPendingTracking || !orders) return [];
         
         const branchKey = normalizeBranchKey(selectedBranch);
         const matchedOrders = orders.filter(o => o.trackingNo === selectedTrackingNo);
         
-        // 🟢 ตัวแปรจำค่า Size ล่าสุด
-        let lastKnownSize = "-"; 
+        const itemsFromOrder: InventoryItem[] = matchedOrders.flatMap(order => 
+            (order.items || [])
+                .filter(it => it.branchKey === branchKey)
+                .map(it => {
+                    // สร้าง key ค้นหา 2 แบบ (แบบเจาะจง Category และแบบชื่อล้วน)
+                    const itemKeyName = it.item.toLowerCase().replace(/\s+/g, "");
+                    const specificKey = `${it.category}|${itemKeyName}`;
+                    
+                    // 🔍 ดึง Size จาก Map
+                    let currentSize = productSizeMap.get(specificKey) || productSizeMap.get(itemKeyName) || "-";
 
-        // ดึง items ออกมาทั้งหมดก่อน
-        let rawItems = matchedOrders.flatMap(order => 
-            (order.items || []).filter(it => it.branchKey === branchKey)
+                    return {
+                        id: `${order.orderNo}_${it.item}`.replace(/\s+/g, '_'),
+                        branch: it.branch,
+                        branchKey: it.branchKey,
+                        category: it.category,
+                        item: it.item,
+                        size: currentSize, // ✅ Size ต้องมาแน่นอน
+                        qty: it.qty
+                    };
+                })
         );
-
-        // แปลงข้อมูลและเติม Size
-        const itemsWithSize = rawItems.map(it => {
-             // 🔍 1. ลองหา Item นี้ใน Database
-             const exactMatch = database.find(d => 
-                 d.category === it.category && 
-                 d.item.toLowerCase().replace(/\s+/g, "") === it.item.toLowerCase().replace(/\s+/g, "")
-             );
-
-             let currentSize = exactMatch?.size || "-";
-
-             // 🟢 Logic เติมเต็ม Size (สำคัญมาก!!)
-             // ถ้าเจอ Size ใน DB -> ใช้ค่านั้น และอัปเดต lastKnownSize
-             // ถ้าไม่เจอ หรือเป็น "-" -> ใช้ lastKnownSize เดิม
-             if (currentSize && currentSize !== "-") {
-                 lastKnownSize = currentSize;
-             } else {
-                 currentSize = lastKnownSize;
-             }
-
-             return {
-                id: `${selectedTrackingNo}_${it.item}`.replace(/\s+/g, '_'),
-                branch: it.branch,
-                branchKey: it.branchKey,
-                category: it.category,
-                item: it.item,
-                size: currentSize, // ✅ ใช้ค่าที่เติมเต็มแล้ว
-                qty: it.qty
-            };
-        });
 
         if (searchTerm) {
             const lower = searchTerm.toLowerCase();
-            return itemsWithSize.filter(d => d.item.toLowerCase().includes(lower) || d.size.toLowerCase().includes(lower));
+            return itemsFromOrder.filter(d => d.item.toLowerCase().includes(lower) || d.size.toLowerCase().includes(lower));
         }
 
-        return itemsWithSize;
-    }, [orders, database, selectedBranch, selectedTrackingNo, isPendingTracking, searchTerm]);
+        return itemsFromOrder;
+    }, [orders, productSizeMap, selectedBranch, selectedTrackingNo, isPendingTracking, searchTerm]);
 
 
     const currentTableData = useMemo(() => {
@@ -547,7 +556,7 @@ const PopTracking: React.FC = () => {
     const loadOrders = async () => {
       try {
         const res = await fetch(
-          `https://script.google.com/macros/s/AKfycbwez3Frm0CM80fp_sSBWbbIdMvdkFG8k_2b-SWBrXrCn2IgQl2iIUHPh8S_uNd9BDU/exec?action=getOrders&_t=${Date.now()}`
+          `https://script.google.com/macros/s/AKfycbw_qXZVBiT8OujOcsaxapjXbKofSmIPmm34CEZJy4o7Ei2tfu_8KykpyZWFVR4Dr1w/exec?action=getOrders&_t=${Date.now()}`
         );
 
         const json = await res.json();
@@ -573,17 +582,17 @@ const PopTracking: React.FC = () => {
       }
     };
 
-    // const groupedOrdersByTracking = useMemo(() => {
-    //   const map: Record<string, OrderData[]> = {};
+    const groupedOrdersByTracking = useMemo(() => {
+      const map: Record<string, OrderData[]> = {};
 
-    //   orders.forEach(order => {
-    //     const key = order.trackingNo || "PENDING";
-    //     if (!map[key]) map[key] = [];
-    //     map[key].push(order);
-    //   });
+      orders.forEach(order => {
+        const key = order.trackingNo || "PENDING";
+        if (!map[key]) map[key] = [];
+        map[key].push(order);
+      });
 
-    //   return map;
-    // }, [orders]);
+      return map;
+    }, [orders]);
 
     const pendingOrders = useMemo(() => {
       if (!selectedBranch || !isPendingTracking || !selectedCategoryType) return [];
@@ -696,6 +705,7 @@ const PopTracking: React.FC = () => {
                                                         <thead>
                                                             <tr style={{ background: '#fffbeb' }}>
                                                                 <th>Category</th>
+                                                                <th>Size</th>
                                                                 <th>Item</th>
                                                                 <th style={{ textAlign: 'center' }}>Qty</th>
                                                             </tr>
@@ -704,6 +714,11 @@ const PopTracking: React.FC = () => {
                                                             {order.items.filter(it => it.branchKey === normalizeBranchKey(selectedBranch)).map((it, idx) => (
                                                                 <tr key={idx}>
                                                                     <td><span style={{ fontSize: '0.75rem', background: '#fef3c7', padding: '2px 8px', borderRadius: 12, color: '#92400e', fontWeight: 600 }}>{it.category}</span></td>
+                                                                    <td>
+                                                                        <span style={{ fontSize: '0.8rem', color: '#b45309' }}>
+                                                                            {it.size || "-"}
+                                                                        </span>
+                                                                    </td>
                                                                     <td>{it.item}</td>
                                                                     <td style={{ textAlign: 'center', fontWeight: 600 }}>{it.qty.toLocaleString()}</td>
                                                                 </tr>
@@ -737,7 +752,7 @@ const PopTracking: React.FC = () => {
                                                 <thead>
                                                     <tr>
                                                         <th style={{ width: 80 }}>Category</th>
-                                                        {/* ✅ 7. เพิ่ม Header Size ในตาราง */}
+                                                  
                                                         <th style={{ width: 150 }}>Size</th>
                                                         <th>Item</th>
                                                         <th style={{ width: 40, textAlign: 'center' }}>Qty</th>
