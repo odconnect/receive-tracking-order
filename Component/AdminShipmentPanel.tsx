@@ -18,18 +18,17 @@ const AdminShipmentPanel: React.FC<Props> = ({ scriptUrl }) => {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<ShipmentItem[]>([]);
 
-  // Filter States
+ 
   const [branchFilter, setBranchFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"POP" | "EQUIPMENT">("POP"); // ✅ เพิ่มตัวเลือกประเภท
+  const [typeFilter, setTypeFilter] = useState<"POP" | "EQUIPMENT">("POP"); 
   const [trackingFilter, setTrackingFilter] = useState("");
 
-  // Editing States
+ 
   const [editingOrderNo, setEditingOrderNo] = useState<string | null>(null);
   const [tempTracking, setTempTracking] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // ===== Helper Functions =====
-  // ฟังก์ชันตัดคำว่า (Equipment) ออก เพื่อให้ได้ชื่อสาขาหลัก
+  
   const getBaseBranchName = (fullBranchName: string) => {
     return fullBranchName.replace(" (Equipment)", "").trim();
   };
@@ -64,9 +63,6 @@ const AdminShipmentPanel: React.FC<Props> = ({ scriptUrl }) => {
   const availableTrackings = useMemo(() => {
     if (!branchFilter) return [];
 
-    // สร้างชื่อสาขาเต็มๆ ตามประเภทที่เลือก
-    // ถ้าเลือก POP -> "Mega Bangna"
-    // ถ้าเลือก Equipment -> "Mega Bangna (Equipment)"
     const targetBranchName = typeFilter === "EQUIPMENT" 
       ? `${branchFilter} (Equipment)` 
       : branchFilter;

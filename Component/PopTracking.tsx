@@ -43,6 +43,7 @@ interface OrderData {
   orderNo: string;
   orderDate: string;
   trackingNo: string;
+  branch: string;
   items: OrderItem[];
 }
 
@@ -122,7 +123,22 @@ const PopTracking: React.FC = () => {
     const [hasSignature, setHasSignature] = useState<boolean>(false);
     
     const [orders, setOrders] = useState<OrderData[]>([]);
-
+const subCategoryOptions = useMemo(() => {
+    if (selectedCategoryType === "EQUIPMENT") {
+        return [
+            { value: "all", label: "Show All Equipment" },
+            { value: "Equipment-Order", label: "Equipment Order" }
+        ];
+    } else if (selectedCategoryType === "POP") {
+        return [
+            { value: "all", label: "Show All POP" },
+            { value: "RE-Brand", label: "RE-Brand" },
+            { value: "RE-System", label: "RE-System" },
+            { value: "Special-POP", label: "Special POP" }
+        ];
+    }
+    return [{ value: "all", label: "Show All" }];
+}, [selectedCategoryType]);
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
         setSelectedDate(today);
@@ -164,7 +180,7 @@ const PopTracking: React.FC = () => {
                 const equipmentItems = parseEquipmentCSV(equipmentData, "Equipment-Order", allBranches);
                 allData = [...allData, ...equipmentItems];
 
-                // ✅ Filter Branches (ไม่เอา Size มาปน)
+              
                 const sortedBranches = Array.from(allBranches)
                     .sort()
                     .filter(b => {
@@ -187,36 +203,47 @@ const PopTracking: React.FC = () => {
         loadAllData();
     }, []);
 
-    const availableTrackings = useMemo(() => {
-      if (!selectedBranch || !selectedCategoryType) return [];
+   const availableTrackings = useMemo(() => {
+  if (!selectedBranch || !selectedCategoryType) return [];
 
-      const branchKey = normalizeBranchKey(selectedBranch);
-      const set = new Set<string>();
+  const branchKey = normalizeBranchKey(selectedBranch);
+  const set = new Set<string>();
 
-      orders.forEach(order => {
-        if (!order.items || !Array.isArray(order.items)) return;
+  orders.forEach(order => {
+    if (!order.items || !Array.isArray(order.items)) return;
 
-        const branchItems = order.items.filter(
-          it => it.branchKey === branchKey
-        );
-        if (!branchItems.length) return;
+    const branchItems = order.items.filter(
+      it => it.branchKey === branchKey
+    );
+    
+    if (!branchItems.length) return;
 
-        const match =
-          selectedCategoryType === "EQUIPMENT"
-            ? branchItems.some(it => it.category === "Equipment-Order") 
-            : branchItems.some(it => it.category !== "Equipment-Order");
+   
+    if (selectedCategoryType === "EQUIPMENT") {
+      
+      const hasEquipment = branchItems.some(it => 
+        it.category === "Equipment" || it.category === "Equipment-Order"
+      );
+      if (hasEquipment) {
+        set.add(order.trackingNo || "PENDING");
+      }
+    } else if (selectedCategoryType === "POP") {
 
-        if (match) {
-          set.add(order.trackingNo || "PENDING");
-        }
-      });
+      const hasPop = branchItems.some(it => 
+        it.category !== "Equipment" && it.category !== "Equipment-Order"
+      );
+      if (hasPop) {
+        set.add(order.trackingNo || "PENDING");
+      }
+    }
+  });
 
-      return Array.from(set).sort((a, b) => {
-        if (a === "PENDING") return -1;
-        if (b === "PENDING") return 1;
-        return a.localeCompare(b);
-      });
-    }, [orders, selectedBranch, selectedCategoryType]);
+  return Array.from(set).sort((a, b) => {
+    if (a === "PENDING") return -1;
+    if (b === "PENDING") return 1;
+    return a.localeCompare(b);
+  });
+}, [orders, selectedBranch, selectedCategoryType]);
 
     useEffect(() => { setCurrentPage(1); }, [selectedBranch, selectedCategory, searchTerm]);
     useEffect(() => { loadOrders(); }, []);
@@ -393,24 +420,24 @@ const PopTracking: React.FC = () => {
             reader.onerror = (error) => reject(error);
         });
     };
-  const pendingOrders = useMemo(() => {
-      if (!selectedBranch || !isPendingTracking || !selectedCategoryType) return [];
+const pendingOrders = useMemo(() => {
+    if (!selectedBranch || !isPendingTracking || !selectedCategoryType || !orders) return [];
 
-      const branchKey = normalizeBranchKey(selectedBranch);
+    const branchKey = normalizeBranchKey(selectedBranch);
 
-      return orders.filter(order => {
+    return orders.filter(order => {
         if (order.trackingNo !== "PENDING") return false;
 
-        const branchItems = (order.items || []).filter(
-          it => it.branchKey === branchKey
-        );
-        if (!branchItems.length) return false;
+        const hasMatchBranch = order.items.some(it => it.branchKey === branchKey);
+        if (!hasMatchBranch) return false;
 
-        return selectedCategoryType === "EQUIPMENT"
-          ? branchItems.some(it => it.category === "Equipment-Order")
-          : branchItems.some(it => it.category !== "Equipment-Order");
-      });
-    }, [orders, selectedBranch, isPendingTracking, selectedCategoryType]);
+        if (selectedCategoryType === "EQUIPMENT") {
+            return order.items.some(it => it.category === "Equipment" || it.category === "Equipment-Order");
+        } else {
+            return order.items.some(it => it.category !== "Equipment" && it.category !== "Equipment-Order");
+        }
+    });
+}, [orders, selectedBranch, isPendingTracking, selectedCategoryType]);
     
     // const filteredData = useMemo<InventoryItem[]>(() => {
     //     if (!selectedBranch || !selectedTrackingNo || isPendingTracking || !orders) return [];
@@ -450,30 +477,24 @@ const PopTracking: React.FC = () => {
 const filteredData = useMemo<InventoryItem[]>(() => {
     if (!selectedBranch || !selectedCategoryType || !orders) return [];
     
-    const branchKey = normalizeBranchKey(selectedBranch);
-    let matchedOrders: OrderData[] = [];
+   
+    const targetBranchKey = normalizeBranchKey(selectedBranch);
 
-    if (isPendingTracking) {
-        matchedOrders = pendingOrders;
-    } else {
-        matchedOrders = orders.filter(o => o.trackingNo === selectedTrackingNo);
-    }
-    
+    //
+    let matchedOrders = isPendingTracking ? pendingOrders : orders.filter(o => o.trackingNo === selectedTrackingNo);
+
     const itemsFromOrder: InventoryItem[] = matchedOrders.flatMap(order => 
         (order.items || [])
             .filter(it => {
-                const currentItBranchKey = normalizeBranchKey(it.branch.replace("(Equipment)", ""));
-                const isMatchBranch = currentItBranchKey === branchKey;
+              
+                const itemBranchKey = normalizeBranchKey(it.branch);
                 
-                if (!isMatchBranch) return false;
-                const isEquipmentItem = 
-                    it.category === "Equipment-Order" || 
-                    it.branch.toLowerCase().includes("(Equipment)");
+                const isBranchMatch = itemBranchKey.includes(targetBranchKey); 
 
                 if (selectedCategoryType === "EQUIPMENT") {
-                    return isEquipmentItem;
+                    return isBranchMatch && (it.category === "Equipment" || it.category === "Equipment-Order");
                 } else {
-                    return !isEquipmentItem;
+                    return isBranchMatch && (it.category !== "Equipment" && it.category !== "Equipment-Order");
                 }
             })
             .map(it => {
@@ -492,21 +513,22 @@ const filteredData = useMemo<InventoryItem[]>(() => {
                 };
             })
     );
-let finalData = itemsFromOrder;
+
+
+    let finalData = itemsFromOrder;
     if (selectedCategory !== 'all') {
         finalData = finalData.filter(d => d.category === selectedCategory);
     }
-
     if (searchTerm) {
         const lower = searchTerm.toLowerCase();
-        return finalData.filter(d => 
+        finalData = finalData.filter(d => 
             d.item.toLowerCase().includes(lower) || 
             (d.size && d.size.toLowerCase().includes(lower))
         );
     }
 
-return finalData;
-}, [orders, productSizeMap, selectedBranch, selectedTrackingNo, isPendingTracking, selectedCategory, searchTerm, pendingOrders, selectedCategoryType]);
+    return finalData;
+}, [orders, selectedBranch, selectedTrackingNo, isPendingTracking, pendingOrders, selectedCategoryType, selectedCategory, searchTerm, productSizeMap]);
 
     const currentTableData = useMemo(() => {
         const indexOfLastItem = currentPage * itemsPerPage; const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -709,9 +731,16 @@ const payload: SubmitPayload = {
                                         {branches.map(b => <option key={b} value={b}>{b}</option>)}
                                     </select>
                                 </div>
-                                <div className="input-group">
-                                    <label>2. Category</label>
-                                    <select value={selectedCategoryType} onChange={(e) => { setSelectedCategoryType(e.target.value as "POP" | "EQUIPMENT"); setSelectedTrackingNo(""); }}>
+                              <div className="input-group">
+    <label>2. Category</label>
+    <select 
+        value={selectedCategoryType} 
+        onChange={(e) => { 
+            setSelectedCategoryType(e.target.value as "POP" | "EQUIPMENT"); 
+            setSelectedTrackingNo(""); 
+            setSelectedCategory("all");
+        }}
+    >
                                         <option value="">-- Select Category --</option>
                                         <option value="POP">📦 POP</option>
                                         <option value="EQUIPMENT">🛠 Equipment</option>
@@ -728,16 +757,17 @@ const payload: SubmitPayload = {
                                     </select>
                                   </div>
                                 )}
-                                <div className="input-group">
-                                    <label>4. Filter Sub-Category</label>
-                                    <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-                                        <option value="all">Show All</option>
-                                        <option value="RE-Brand">RE-Brand</option>
-                                        <option value="RE-System">RE-System</option>
-                                        <option value="Special-POP">Special POP</option>
-                                        <option value="Equipment-Order">Equipment Order</option>
-                                    </select>
-                                </div>
+                              <div className="input-group">
+    <label>4. Filter Sub-Category</label>
+    <select 
+        value={selectedCategory} 
+        onChange={(e) => setSelectedCategory(e.target.value)}
+    >
+        {subCategoryOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+    </select>
+</div>
                                 <div className="input-group">
                                     <label>5. Date <span className="required">*</span></label>
                                     <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
@@ -814,7 +844,7 @@ const payload: SubmitPayload = {
                                                 <thead>
                                                     <tr>
                                                         <th style={{ width: 80 }}>Category</th>
-                                                  
+        
                                                         <th style={{ width: 150 }}>Size</th>
                                                         <th>Item</th>
                                                         <th style={{ width: 40, textAlign: 'center' }}>Qty</th>
@@ -830,7 +860,7 @@ const payload: SubmitPayload = {
                                                 </thead>
                                                 <tbody>
                                                     {currentTableData.map(row => { const isChecked = !!checkedItems[row.id]; return (<tr key={row.id} className={isChecked ? 'checked-row' : ''} onClick={() => handleToggleCheck(row.id)}>
-                                                        <td><span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f1f5f9', borderRadius: 4, color: '#64748b' }}>{row.category.replace('RE-', '').replace('-POP', '')}</span></td>
+                                                        <td><span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#f1f5f9', borderRadius: 4, color: '#64748b' }}>{row.category === "Equipment" ? "EQUIPMENT" :row.category.replace('RE-', '').replace('-POP', '')}</span></td>
                                                         
                                                       
                                                         <td><span style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 500 }}>{row.size || "-"}</span></td>
