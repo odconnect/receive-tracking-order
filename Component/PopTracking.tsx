@@ -65,14 +65,14 @@ interface SubmitPayload {
 type LoadingStatus = 'loading' | 'ready' | 'error';
 type AppMode = 'entry' | 'history' | 'admin';
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3kLK6sIAZt4azlSQwvnJLH_sZJeMtN6vnLt_jN5wML_QvJgYN6UhGa2S1ayU_AGuB/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSiFknuaj-6Wpo4FMfUTpm0q8O6VCYNjPDKtHbdiuxga3bWowcGX9D4AlYF9GwCHAdow/exec";
 
 const SHEET_URLS = {
-    brand: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=577319442",
-    system: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=1864539100",
-    special: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=1283637344",
+    brand: "https://docs.google.com/spreadsheets/d/1Hl4iM8g-v8EZ8V6DpqyGu4fVocHHul-9d4yDLBOlKsM/export?format=csv&gid=88946340",
+    system: "https://docs.google.com/spreadsheets/d/1Hl4iM8g-v8EZ8V6DpqyGu4fVocHHul-9d4yDLBOlKsM/export?format=csv&gid=1921906290",
+    special: "https://docs.google.com/spreadsheets/d/1Hl4iM8g-v8EZ8V6DpqyGu4fVocHHul-9d4yDLBOlKsM/export?format=csv&gid=165935741",
     tracking: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=1495482850",
-    equipment: "https://docs.google.com/spreadsheets/d/1f4jzIQd2wdIAMclsY4vRw04SScm5xUYN0bdOz8Rn4Pk/export?format=csv&gid=288598451"
+    equipment: "https://docs.google.com/spreadsheets/d/1Hl4iM8g-v8EZ8V6DpqyGu4fVocHHul-9d4yDLBOlKsM/export?format=csv&gid=1003352386"
 };
 
 const SkeletonLoader = () => {
@@ -188,7 +188,10 @@ const subCategoryOptions = useMemo(() => {
                             b.length > 2 && 
                             !b.includes("Total") && 
                             !b.includes("POP") && 
-                            !b.includes("No.") &&      
+                            !b.includes("No.") &&     
+                            !b.includes("&quot;") && 
+            !b.includes("script") && 
+            !b.includes("#") && 
                             !b.match(/^\d/) &&         
                             !b.match(/\(W.*\)/)        
                         );
@@ -196,7 +199,7 @@ const subCategoryOptions = useMemo(() => {
                 
                 // setDatabase(allData); 
                 setBranches(sortedBranches); 
-                setProductSizeMap(tempSizeMap); // ✅ บันทึก Map ลง State
+                setProductSizeMap(tempSizeMap); 
                 setLoadingStatus('ready');
             } catch (error) { console.error(error); setLoadingStatus('error'); }
         };
@@ -657,13 +660,13 @@ const payload: SubmitPayload = {
     const loadOrders = async () => {
       try {
         const res = await fetch(
-          `https://script.google.com/macros/s/AKfycbxDXFSAN_fZrwHQAl05ta-ih7tlrhWgQNGXrtF45UnLA8vT5xVB6QLXKlKHY7OFFoQ/exec?action=getOrders&_t=${Date.now()}`
+          `https://script.google.com/macros/s/AKfycbzbc8w7ivM-7lNprOf0KHVpHusJ0B_cmRMwuebJ1T4EXP-HBn5kO8aG2CfehYK11-sL/exec?action=getOrders&_t=${Date.now()}`
         );
 
         const json = await res.json();
         console.log("🔥 RAW ORDERS:", json);
 
-        const orderArray = Array.isArray(json) ? json : [];
+        const orderArray = Array.isArray(json) ? json : [];  
 
         const normalized = orderArray.map((order: OrderData) => ({
           ...order,
