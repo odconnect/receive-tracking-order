@@ -42,5 +42,5 @@
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"
   },
-  "homepage": "https://kliawpan.github.io/popreceive/"
+  "homepage": "https://odconnect.github.io/receive-tracking-order/"
 }
